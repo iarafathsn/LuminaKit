@@ -1,5 +1,6 @@
 Pod::Spec.new do |s|
-  s.name             = 'LuminaKit'
+  s.name             = 'LuminaLoaderKit'
+  s.module_name      = 'LuminaKit'
   s.version          = '1.0.0'
   s.summary          = 'An animated bubble loading indicator that traces the border of any view shape.'
 

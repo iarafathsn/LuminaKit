@@ -33,7 +33,7 @@ Or in Xcode: **File → Add Package Dependencies** → enter `https://github.com
 Add the following to your `Podfile`:
 
 ```ruby
-pod 'LuminaKit', '~> 1.0'
+pod 'LuminaLoaderKit', '~> 1.0'
 ```
 
 Then run:
