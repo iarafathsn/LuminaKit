@@ -12,7 +12,7 @@ https://github.com/user-attachments/assets/0e88076c-b597-40d0-a74f-3b4a88e21431
 ## Requirements
 
 - iOS 18.0+
-- Swift 5.10+
+- Swift 6.0+
 
 ## Installation
 
@@ -22,11 +22,41 @@ Add the following to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/user/LuminaKit.git", from: "1.0.0")
+    .package(url: "https://github.com/iarafathsn/LuminaKit.git", from: "1.0.0")
 ]
 ```
 
-Or in Xcode: **File → Add Package Dependencies → Enter repository URL**
+Or in Xcode: **File → Add Package Dependencies** → enter `https://github.com/iarafathsn/LuminaKit.git`
+
+### CocoaPods
+
+Add the following to your `Podfile`:
+
+```ruby
+pod 'LuminaKit', '~> 1.0'
+```
+
+Then run:
+
+```bash
+pod install
+```
+
+### Carthage
+
+Add the following to your `Cartfile`:
+
+```
+github "iarafathsn/LuminaKit" ~> 1.0
+```
+
+Then run:
+
+```bash
+carthage update --use-xcframeworks
+```
+
+Drag the built `LuminaKit.xcframework` from `Carthage/Build/` into your project.
 
 ## Usage
 
