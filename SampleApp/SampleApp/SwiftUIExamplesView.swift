@@ -7,7 +7,7 @@ struct SwiftUIExamplesView: View {
     @State private var isRingLoading = false
     @State private var isPulseLoading = false
     @State private var progress: CGFloat = 0.0
-    @State private var progressTimer: Timer?
+    @State private var progressTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -151,7 +151,7 @@ struct SwiftUIExamplesView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.green)
-                    .disabled(progressTimer != nil)
+                    .disabled(progressTask != nil)
                 }
             }
         }
@@ -160,20 +160,21 @@ struct SwiftUIExamplesView: View {
     // MARK: - Progress Simulation
 
     private func simulateProgress() {
+        progressTask?.cancel()
         progress = 0
-        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
-            if progress >= 1.0 {
-                timer.invalidate()
-                progressTimer = nil
-            } else {
+        progressTask = Task {
+            while progress < 1.0 {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { break }
                 progress = min(progress + 0.01, 1.0)
             }
+            progressTask = nil
         }
     }
-
+    
     private func stopProgressTimer() {
-        progressTimer?.invalidate()
-        progressTimer = nil
+        progressTask?.cancel()
+        progressTask = nil
     }
 }
 

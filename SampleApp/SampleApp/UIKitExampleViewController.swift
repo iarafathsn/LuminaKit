@@ -319,15 +319,15 @@ final class UIKitExampleViewController: UIViewController {
         guard let progressTarget = view.viewWithTag(888) else { return }
         progressTarget.showLuminaProgress(value: 0)
 
-        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] timer in
-            guard let self else { timer.invalidate(); return }
-            self.currentProgress = min(self.currentProgress + 0.01, 1.0)
-            progressTarget.updateLuminaProgress(value: self.currentProgress)
-
-            if self.currentProgress >= 1.0 {
-                timer.invalidate()
-                self.progressTimer = nil
-                // Keep the progress shown at 100%
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.currentProgress = min(self.currentProgress + 0.01, 1.0)
+                progressTarget.updateLuminaProgress(value: self.currentProgress)
+                if self.currentProgress >= 1.0 {
+                    self.progressTimer?.invalidate()
+                    self.progressTimer = nil
+                }
             }
         }
     }
