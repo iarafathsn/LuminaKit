@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// A `ViewModifier` that overlays an animated bubble tracing
+/// A `ViewModifier` that overlays an animated loader tracing
 /// the border of the modified view's shape.
 ///
-/// When `isAnimating` is `true`, the bubble appears and continuously
-/// moves along the path. When `false`, the overlay is hidden.
+/// Supports multiple styles: `.bubble`, `.ring`, and `.pulse`.
+/// When `isAnimating` is `true`, the loader appears. When `false`, it hides.
 struct LuminaLoaderModifier<S: Shape>: ViewModifier {
 
     @Binding var isAnimating: Bool
@@ -12,6 +12,7 @@ struct LuminaLoaderModifier<S: Shape>: ViewModifier {
     let configuration: LuminaConfiguration
 
     @State private var detectedCornerRadius: CGFloat = 0
+    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
@@ -33,16 +34,42 @@ struct LuminaLoaderModifier<S: Shape>: ViewModifier {
     private func luminaOverlay(in size: CGSize) -> some View {
         let rect = CGRect(origin: .zero, size: size)
         let path = resolvePath(in: rect)
+        let colors = LuminaResolvedColors.resolve(
+            mode: configuration.colorMode,
+            colorScheme: colorScheme
+        )
 
+        switch configuration.style {
+        case .bubble:
+            bubbleOverlay(path: path, colors: colors)
+
+        case .ring(let lineWidth):
+            LuminaRingView(
+                path: path,
+                lineWidth: lineWidth,
+                speed: configuration.speed,
+                colors: colors
+            )
+
+        case .pulse:
+            LuminaPulseView(
+                path: path,
+                speed: configuration.speed,
+                colors: colors
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func bubbleOverlay(path: CGPath, colors: LuminaResolvedColors) -> some View {
         TimelineView(.animation) { timeline in
             let elapsed = timeline.date.timeIntervalSinceReferenceDate
             let fraction = elapsed * configuration.speed
-            // Wrap to 0...1
             let t = fraction - floor(fraction)
 
             let position = PathPointCalculator.pointAtFraction(t, on: path)
 
-            LuminaBubbleView(size: configuration.bubbleSize)
+            LuminaBubbleView(size: configuration.bubbleSize, colors: colors)
                 .position(position)
         }
     }

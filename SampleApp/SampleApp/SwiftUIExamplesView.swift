@@ -3,20 +3,21 @@ import LuminaKit
 
 struct SwiftUIExamplesView: View {
 
-    @State private var isButtonLoading = false
-    @State private var isCircleLoading = false
-    @State private var isCapsuleLoading = false
-    @State private var isCardLoading = false
+    @State private var isBubbleLoading = false
+    @State private var isRingLoading = false
+    @State private var isPulseLoading = false
+    @State private var progress: CGFloat = 0.0
+    @State private var progressTimer: Timer?
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: 28) {
                     headerSection
-                    roundedRectExample
-                    circleExample
-                    capsuleExample
-                    cardExample
+                    bubbleExample
+                    ringExample
+                    pulseExample
+                    progressExample
 
                     Spacer(minLength: 40)
                 }
@@ -31,23 +32,21 @@ struct SwiftUIExamplesView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: 8) {
-            Text("Tap any example to toggle the loader")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
+        Text("Tap any example to toggle the loader")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
     }
 
-    // MARK: - Rounded Rectangle (Auto-detect)
+    // MARK: - Bubble (Original)
 
-    private var roundedRectExample: some View {
-        ExampleCard(title: "Rounded Rectangle", subtitle: "Auto-detects corner radius") {
+    private var bubbleExample: some View {
+        ExampleCard(title: "Bubble", subtitle: "Original style — .bubble") {
             Button {
-                isButtonLoading.toggle()
+                isBubbleLoading.toggle()
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: isButtonLoading ? "stop.fill" : "play.fill")
-                    Text(isButtonLoading ? "Stop Loading" : "Start Loading")
+                    Image(systemName: isBubbleLoading ? "stop.fill" : "play.fill")
+                    Text(isBubbleLoading ? "Stop" : "Start Bubble")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
@@ -56,97 +55,125 @@ struct SwiftUIExamplesView: View {
             .buttonStyle(.borderedProminent)
             .tint(.blue)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .luminaLoader(isAnimating: $isButtonLoading)
+            .luminaLoader(isAnimating: $isBubbleLoading, style: .bubble)
         }
     }
 
-    // MARK: - Circle
+    // MARK: - Ring
 
-    private var circleExample: some View {
-        ExampleCard(title: "Circle", subtitle: "Explicit shape: Circle()") {
+    private var ringExample: some View {
+        ExampleCard(title: "Ring", subtitle: "Glowing arc — .ring(lineWidth: 3)") {
             Button {
-                isCircleLoading.toggle()
+                isRingLoading.toggle()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: isRingLoading ? "stop.fill" : "play.fill")
+                    Text(isRingLoading ? "Stop" : "Start Ring")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.purple)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .luminaLoader(isAnimating: $isRingLoading, style: .ring(lineWidth: 3))
+        }
+    }
+
+    // MARK: - Pulse
+
+    private var pulseExample: some View {
+        ExampleCard(title: "Pulse", subtitle: "Breathing glow — .pulse") {
+            Button {
+                isPulseLoading.toggle()
             } label: {
                 ZStack {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [.purple, .pink],
+                                colors: [.orange, .pink],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 80, height: 80)
 
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 32))
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 28))
                         .foregroundStyle(.white)
                 }
             }
             .buttonStyle(.plain)
-            .luminaLoader(isAnimating: $isCircleLoading, shape: Circle())
-        }
-    }
-
-    // MARK: - Capsule
-
-    private var capsuleExample: some View {
-        ExampleCard(title: "Capsule", subtitle: "Explicit shape: Capsule()") {
-            Button {
-                isCapsuleLoading.toggle()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.down.circle.fill")
-                    Text("Download")
-                        .fontWeight(.medium)
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(.green.gradient)
-                .foregroundStyle(.white)
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .luminaLoader(isAnimating: $isCapsuleLoading, shape: Capsule())
-        }
-    }
-
-    // MARK: - Card
-
-    private var cardExample: some View {
-        ExampleCard(title: "Card View", subtitle: "Custom bubbleSize & speed") {
-            Button {
-                isCardLoading.toggle()
-            } label: {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Image(systemName: "doc.text.fill")
-                            .font(.title2)
-                            .foregroundStyle(.orange)
-                        Spacer()
-                        Image(systemName: "ellipsis")
-                            .foregroundStyle(.secondary)
-                    }
-                    Text("Processing Document")
-                        .font(.headline)
-                    Text("Analyzing content and extracting metadata from the uploaded file.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
-            .buttonStyle(.plain)
             .luminaLoader(
-                isAnimating: $isCardLoading,
-                shape: RoundedRectangle(cornerRadius: 16),
-                bubbleSize: 12,
-                speed: 0.35
+                isAnimating: $isPulseLoading,
+                shape: Circle(),
+                style: .pulse,
+                speed: 0.8
             )
         }
+    }
+
+    // MARK: - Progress
+
+    private var progressExample: some View {
+        ExampleCard(title: "Progress", subtitle: "Determinate — .luminaProgress(value:)") {
+            VStack(spacing: 16) {
+                // Progress target view
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.down.doc.fill")
+                        .font(.title2)
+                        .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Downloading File")
+                            .font(.subheadline.weight(.medium))
+                        Text("\(Int(progress * 100))% complete")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(14)
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .luminaProgress(value: $progress)
+
+                // Controls
+                HStack(spacing: 12) {
+                    Button("Reset") {
+                        stopProgressTimer()
+                        progress = 0
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Simulate") {
+                        simulateProgress()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .disabled(progressTimer != nil)
+                }
+            }
+        }
+    }
+
+    // MARK: - Progress Simulation
+
+    private func simulateProgress() {
+        progress = 0
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
+            if progress >= 1.0 {
+                timer.invalidate()
+                progressTimer = nil
+            } else {
+                progress = min(progress + 0.01, 1.0)
+            }
+        }
+    }
+
+    private func stopProgressTimer() {
+        progressTimer?.invalidate()
+        progressTimer = nil
     }
 }
 

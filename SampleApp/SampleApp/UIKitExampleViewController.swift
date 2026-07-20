@@ -32,14 +32,17 @@ final class UIKitExampleViewController: UIViewController {
     private let stackView = UIStackView()
 
     // Example views
-    private let roundedButton = UIButton(type: .system)
-    private let circleView = UIView()
-    private let pillButton = UIButton(type: .system)
+    private let bubbleButton = UIButton(type: .system)
+    private let ringButton = UIButton(type: .system)
+    private let pulseView = UIView()
+    private let progressButton = UIButton(type: .system)
 
-    // Tracking state
-    private var isRoundedLoading = false
-    private var isCircleLoading = false
-    private var isPillLoading = false
+    // State
+    private var isBubbleLoading = false
+    private var isRingLoading = false
+    private var isPulseLoading = false
+    private var currentProgress: CGFloat = 0
+    private var progressTimer: Timer?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -75,7 +78,6 @@ final class UIKitExampleViewController: UIViewController {
     }
 
     private func setupExamples() {
-        // Info label
         let infoLabel = UILabel()
         infoLabel.text = "Tap any example to toggle the loader"
         infoLabel.font = .preferredFont(forTextStyle: .subheadline)
@@ -83,99 +85,163 @@ final class UIKitExampleViewController: UIViewController {
         infoLabel.textAlignment = .center
         stackView.addArrangedSubview(infoLabel)
 
-        // 1. Rounded Rectangle Button
+        // 1. Bubble
         stackView.addArrangedSubview(
             makeExampleSection(
-                title: "Rounded Rectangle",
-                subtitle: "Auto-detects bounds & cornerRadius",
-                contentView: makeRoundedButton()
+                title: "Bubble",
+                subtitle: "showLuminaLoader(style: .bubble)",
+                contentView: makeBubbleButton()
             )
         )
 
-        // 2. Circle View
+        // 2. Ring
         stackView.addArrangedSubview(
             makeExampleSection(
-                title: "Circle",
-                subtitle: "Custom CGPath: UIBezierPath(ovalIn:)",
-                contentView: makeCircleView()
+                title: "Ring",
+                subtitle: "showLuminaLoader(style: .ring())",
+                contentView: makeRingButton()
             )
         )
 
-        // 3. Pill / Capsule Button
+        // 3. Pulse
         stackView.addArrangedSubview(
             makeExampleSection(
-                title: "Capsule / Pill",
-                subtitle: "Capsule path from cornerRadius = height/2",
-                contentView: makePillButton()
+                title: "Pulse",
+                subtitle: "showLuminaLoader(style: .pulse)",
+                contentView: makePulseView()
+            )
+        )
+
+        // 4. Progress
+        stackView.addArrangedSubview(
+            makeExampleSection(
+                title: "Progress",
+                subtitle: "showLuminaProgress / updateLuminaProgress",
+                contentView: makeProgressButton()
             )
         )
     }
 
     // MARK: - Example Builders
 
-    private func makeRoundedButton() -> UIView {
+    private func makeBubbleButton() -> UIView {
         var config = UIButton.Configuration.filled()
-        config.title = "Start Loading"
+        config.title = "Start Bubble"
         config.image = UIImage(systemName: "play.fill")
         config.imagePadding = 8
         config.baseBackgroundColor = .systemBlue
         config.cornerStyle = .medium
-        roundedButton.configuration = config
-        roundedButton.layer.cornerRadius = 12
-        roundedButton.clipsToBounds = true
-        roundedButton.addTarget(self, action: #selector(toggleRoundedLoader), for: .touchUpInside)
-        roundedButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        return roundedButton
+        bubbleButton.configuration = config
+        bubbleButton.layer.cornerRadius = 12
+        bubbleButton.clipsToBounds = true
+        bubbleButton.addTarget(self, action: #selector(toggleBubble), for: .touchUpInside)
+        bubbleButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        return bubbleButton
     }
 
-    private func makeCircleView() -> UIView {
+    private func makeRingButton() -> UIView {
+        var config = UIButton.Configuration.filled()
+        config.title = "Start Ring"
+        config.image = UIImage(systemName: "play.fill")
+        config.imagePadding = 8
+        config.baseBackgroundColor = .systemPurple
+        config.cornerStyle = .medium
+        ringButton.configuration = config
+        ringButton.layer.cornerRadius = 12
+        ringButton.clipsToBounds = true
+        ringButton.addTarget(self, action: #selector(toggleRing), for: .touchUpInside)
+        ringButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        return ringButton
+    }
+
+    private func makePulseView() -> UIView {
         let container = UIView()
-
         let size: CGFloat = 80
-        circleView.backgroundColor = .systemPurple
-        circleView.layer.cornerRadius = size / 2
-        circleView.clipsToBounds = true
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.isUserInteractionEnabled = true
 
-        let imageView = UIImageView(image: UIImage(systemName: "person.fill"))
+        pulseView.backgroundColor = .systemOrange
+        pulseView.layer.cornerRadius = size / 2
+        pulseView.clipsToBounds = true
+        pulseView.translatesAutoresizingMaskIntoConstraints = false
+        pulseView.isUserInteractionEnabled = true
+
+        let imageView = UIImageView(image: UIImage(systemName: "heart.fill"))
         imageView.tintColor = .white
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.addSubview(imageView)
+        pulseView.addSubview(imageView)
 
-        container.addSubview(circleView)
+        container.addSubview(pulseView)
 
         NSLayoutConstraint.activate([
-            circleView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            circleView.topAnchor.constraint(equalTo: container.topAnchor),
-            circleView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            circleView.widthAnchor.constraint(equalToConstant: size),
-            circleView.heightAnchor.constraint(equalToConstant: size),
+            pulseView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            pulseView.topAnchor.constraint(equalTo: container.topAnchor),
+            pulseView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            pulseView.widthAnchor.constraint(equalToConstant: size),
+            pulseView.heightAnchor.constraint(equalToConstant: size),
 
-            imageView.centerXAnchor.constraint(equalTo: circleView.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: circleView.centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: 32),
-            imageView.heightAnchor.constraint(equalToConstant: 32),
+            imageView.centerXAnchor.constraint(equalTo: pulseView.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: pulseView.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 28),
+            imageView.heightAnchor.constraint(equalToConstant: 28),
         ])
 
-        let tap = UITapGestureRecognizer(target: self, action: #selector(toggleCircleLoader))
-        circleView.addGestureRecognizer(tap)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(togglePulse))
+        pulseView.addGestureRecognizer(tap)
 
         return container
     }
 
-    private func makePillButton() -> UIView {
+    private func makeProgressButton() -> UIView {
+        let container = UIStackView()
+        container.axis = .vertical
+        container.spacing = 12
+
+        // Progress target
+        let progressTarget = UIView()
+        progressTarget.backgroundColor = .secondarySystemGroupedBackground
+        progressTarget.layer.cornerRadius = 12
+
+        let hStack = UIStackView()
+        hStack.axis = .horizontal
+        hStack.spacing = 12
+        hStack.alignment = .center
+        hStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let icon = UIImageView(image: UIImage(systemName: "arrow.down.doc.fill"))
+        icon.tintColor = .systemGreen
+        icon.contentMode = .scaleAspectFit
+        icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
+
+        let label = UILabel()
+        label.text = "Downloading File"
+        label.font = .preferredFont(forTextStyle: .subheadline)
+
+        hStack.addArrangedSubview(icon)
+        hStack.addArrangedSubview(label)
+        progressTarget.addSubview(hStack)
+
+        NSLayoutConstraint.activate([
+            hStack.topAnchor.constraint(equalTo: progressTarget.topAnchor, constant: 14),
+            hStack.leadingAnchor.constraint(equalTo: progressTarget.leadingAnchor, constant: 14),
+            hStack.trailingAnchor.constraint(equalTo: progressTarget.trailingAnchor, constant: -14),
+            hStack.bottomAnchor.constraint(equalTo: progressTarget.bottomAnchor, constant: -14),
+        ])
+
+        container.addArrangedSubview(progressTarget)
+
+        // Simulate button
         var config = UIButton.Configuration.filled()
-        config.title = "Download"
-        config.image = UIImage(systemName: "arrow.down.circle.fill")
-        config.imagePadding = 8
+        config.title = "Simulate Download"
         config.baseBackgroundColor = .systemGreen
-        config.cornerStyle = .capsule
-        pillButton.configuration = config
-        pillButton.addTarget(self, action: #selector(togglePillLoader), for: .touchUpInside)
-        pillButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        return pillButton
+        progressButton.configuration = config
+        progressButton.addTarget(self, action: #selector(simulateProgress), for: .touchUpInside)
+        progressButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        container.addArrangedSubview(progressButton)
+
+        // Tag the progressTarget for reference
+        progressTarget.tag = 888
+
+        return container
     }
 
     private func makeExampleSection(title: String, subtitle: String, contentView: UIView) -> UIView {
@@ -213,42 +279,56 @@ final class UIKitExampleViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func toggleRoundedLoader() {
-        isRoundedLoading.toggle()
-        if isRoundedLoading {
-            roundedButton.showLuminaLoader()
-            updateButtonConfig(roundedButton, title: "Stop Loading", icon: "stop.fill")
+    @objc private func toggleBubble() {
+        isBubbleLoading.toggle()
+        if isBubbleLoading {
+            bubbleButton.showLuminaLoader(style: .bubble)
+            updateButtonConfig(bubbleButton, title: "Stop", icon: "stop.fill")
         } else {
-            roundedButton.hideLuminaLoader()
-            updateButtonConfig(roundedButton, title: "Start Loading", icon: "play.fill")
+            bubbleButton.hideLuminaLoader()
+            updateButtonConfig(bubbleButton, title: "Start Bubble", icon: "play.fill")
         }
     }
 
-    @objc private func toggleCircleLoader() {
-        isCircleLoading.toggle()
-        if isCircleLoading {
-            // Use an oval path for the circle shape
-            let ovalPath = UIBezierPath(ovalIn: circleView.bounds).cgPath
-            circleView.showLuminaLoader(path: ovalPath)
+    @objc private func toggleRing() {
+        isRingLoading.toggle()
+        if isRingLoading {
+            ringButton.showLuminaLoader(style: .ring())
+            updateButtonConfig(ringButton, title: "Stop", icon: "stop.fill")
         } else {
-            circleView.hideLuminaLoader()
+            ringButton.hideLuminaLoader()
+            updateButtonConfig(ringButton, title: "Start Ring", icon: "play.fill")
         }
     }
 
-    @objc private func togglePillLoader() {
-        isPillLoading.toggle()
-        if isPillLoading {
-            // Build a capsule path: cornerRadius = half the height
-            let bounds = pillButton.bounds
-            let capsulePath = UIBezierPath(
-                roundedRect: bounds,
-                cornerRadius: bounds.height / 2
-            ).cgPath
-            pillButton.showLuminaLoader(path: capsulePath)
-            updateButtonConfig(pillButton, title: "Cancel", icon: "xmark.circle.fill")
+    @objc private func togglePulse() {
+        isPulseLoading.toggle()
+        if isPulseLoading {
+            let ovalPath = UIBezierPath(ovalIn: pulseView.bounds).cgPath
+            pulseView.showLuminaLoader(path: ovalPath, style: .pulse, speed: 0.8)
         } else {
-            pillButton.hideLuminaLoader()
-            updateButtonConfig(pillButton, title: "Download", icon: "arrow.down.circle.fill")
+            pulseView.hideLuminaLoader()
+        }
+    }
+
+    @objc private func simulateProgress() {
+        progressTimer?.invalidate()
+        currentProgress = 0
+
+        // Find the progress target view
+        guard let progressTarget = view.viewWithTag(888) else { return }
+        progressTarget.showLuminaProgress(value: 0)
+
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            self.currentProgress = min(self.currentProgress + 0.01, 1.0)
+            progressTarget.updateLuminaProgress(value: self.currentProgress)
+
+            if self.currentProgress >= 1.0 {
+                timer.invalidate()
+                self.progressTimer = nil
+                // Keep the progress shown at 100%
+            }
         }
     }
 

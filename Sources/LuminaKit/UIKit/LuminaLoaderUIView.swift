@@ -1,7 +1,7 @@
 import UIKit
 
-/// A `UIView` subclass that renders an animated bubble tracing the border
-/// of its superview's shape.
+/// A `UIView` subclass that renders an animated loader tracing the border
+/// of its superview's shape. Supports bubble, ring, and pulse styles.
 ///
 /// Usage:
 /// ```swift
@@ -19,7 +19,7 @@ public final class LuminaLoaderUIView: UIView {
 
     // MARK: - Configuration
 
-    /// Configuration for bubble size and speed.
+    /// Configuration for loader style, size, speed, and color mode.
     public var configuration: LuminaConfiguration
 
     /// Optional custom path. If `nil`, the path is auto-built from
@@ -35,8 +35,19 @@ public final class LuminaLoaderUIView: UIView {
 
     private var displayLink: CADisplayLink?
     private var startTime: CFTimeInterval = 0
-    private let bubbleView: UIView
     private var currentPath: CGPath?
+
+    // Bubble style
+    private let bubbleView: UIView = UIView()
+
+    // Ring style
+    private let ringTrackLayer = CAShapeLayer()
+    private let ringArcLayer = CAShapeLayer()
+    private let ringGlowLayer = CAShapeLayer()
+
+    // Pulse style
+    private let pulseStrokeLayer = CAShapeLayer()
+    private let pulseGlowLayer = CAShapeLayer()
 
     // MARK: - Init
 
@@ -50,14 +61,14 @@ public final class LuminaLoaderUIView: UIView {
     ) {
         self.configuration = configuration
         self.customPath = customPath
-        self.bubbleView = UIView()
 
         super.init(frame: .zero)
 
-        setupBubble()
         isUserInteractionEnabled = false
         backgroundColor = .clear
         clipsToBounds = false
+
+        setupLayers()
     }
 
     @available(*, unavailable)
@@ -65,7 +76,18 @@ public final class LuminaLoaderUIView: UIView {
         fatalError("init(coder:) is not supported")
     }
 
-    // MARK: - Bubble Setup
+    // MARK: - Setup
+
+    private func setupLayers() {
+        switch configuration.style {
+        case .bubble:
+            setupBubble()
+        case .ring:
+            setupRing()
+        case .pulse:
+            setupPulse()
+        }
+    }
 
     private func setupBubble() {
         let size = configuration.bubbleSize
@@ -73,30 +95,25 @@ public final class LuminaLoaderUIView: UIView {
         bubbleView.layer.cornerRadius = size / 2
         bubbleView.clipsToBounds = false
         bubbleView.isHidden = true
-
         applyBubbleStyle()
         addSubview(bubbleView)
     }
 
     private func applyBubbleStyle() {
         let size = configuration.bubbleSize
+        let colors = resolveColors()
 
         if #available(iOS 26, *) {
-            // Liquid Glass style
-            bubbleView.backgroundColor = UIColor.white.withAlphaComponent(0.5)
-
-            // Use UIGlassEffect for the liquid glass look
+            bubbleView.backgroundColor = colors.bubbleFill
             let glassEffect = UIGlassEffect()
             let effectView = UIVisualEffectView(effect: glassEffect)
             effectView.frame = bubbleView.bounds
             effectView.layer.cornerRadius = size / 2
             effectView.clipsToBounds = true
-            effectView.tag = 999 // Tag for identification
+            effectView.tag = 999
             bubbleView.addSubview(effectView)
         } else {
-            // Fallback: semi-translucent white with blur
-            bubbleView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
-
+            bubbleView.backgroundColor = colors.bubbleFill
             let blurEffect = UIBlurEffect(style: .systemUltraThinMaterial)
             let blurView = UIVisualEffectView(effect: blurEffect)
             blurView.frame = bubbleView.bounds
@@ -106,11 +123,51 @@ public final class LuminaLoaderUIView: UIView {
             bubbleView.addSubview(blurView)
         }
 
-        // Shadow for glow
-        bubbleView.layer.shadowColor = UIColor.white.cgColor
+        bubbleView.layer.shadowColor = colors.bubbleShadow.cgColor
         bubbleView.layer.shadowOpacity = 0.8
         bubbleView.layer.shadowRadius = size * 0.4
         bubbleView.layer.shadowOffset = .zero
+    }
+
+    private func setupRing() {
+        // Track
+        ringTrackLayer.fillColor = nil
+        ringTrackLayer.lineCap = .round
+        ringTrackLayer.lineJoin = .round
+        layer.addSublayer(ringTrackLayer)
+
+        // Glow
+        ringGlowLayer.fillColor = nil
+        ringGlowLayer.lineCap = .round
+        ringGlowLayer.lineJoin = .round
+        layer.addSublayer(ringGlowLayer)
+
+        // Arc
+        ringArcLayer.fillColor = nil
+        ringArcLayer.lineCap = .round
+        ringArcLayer.lineJoin = .round
+        layer.addSublayer(ringArcLayer)
+    }
+
+    private func setupPulse() {
+        // Glow
+        pulseGlowLayer.fillColor = nil
+        pulseGlowLayer.lineCap = .round
+        pulseGlowLayer.lineJoin = .round
+        layer.addSublayer(pulseGlowLayer)
+
+        // Stroke
+        pulseStrokeLayer.fillColor = nil
+        pulseStrokeLayer.lineCap = .round
+        pulseStrokeLayer.lineJoin = .round
+        layer.addSublayer(pulseStrokeLayer)
+    }
+
+    // MARK: - Color Resolution
+
+    private func resolveColors() -> LuminaResolvedUIColors {
+        let isDark = traitCollection.userInterfaceStyle == .dark
+        return LuminaResolvedUIColors.resolve(mode: configuration.colorMode, isDarkMode: isDark)
     }
 
     // MARK: - Layout
@@ -118,13 +175,19 @@ public final class LuminaLoaderUIView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
 
-        // Update the effect view frame if bubble size changed
         if let effectView = bubbleView.viewWithTag(999) {
             effectView.frame = bubbleView.bounds
         }
 
-        // Rebuild path on layout changes
         rebuildPath()
+        updateLayerPaths()
+    }
+
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
+            updateColors()
+        }
     }
 
     private func rebuildPath() {
@@ -140,17 +203,89 @@ public final class LuminaLoaderUIView: UIView {
         }
     }
 
+    private func updateLayerPaths() {
+        guard let path = currentPath else { return }
+        let colors = resolveColors()
+
+        switch configuration.style {
+        case .ring(let lineWidth):
+            ringTrackLayer.path = path
+            ringTrackLayer.lineWidth = lineWidth
+            ringTrackLayer.strokeColor = colors.progressTrack.cgColor
+
+            ringArcLayer.path = path
+            ringArcLayer.lineWidth = lineWidth
+            ringArcLayer.strokeColor = colors.strokeColor.cgColor
+
+            ringGlowLayer.path = path
+            ringGlowLayer.lineWidth = lineWidth
+            ringGlowLayer.strokeColor = colors.strokeGlow.cgColor
+            ringGlowLayer.shadowColor = colors.strokeGlow.cgColor
+            ringGlowLayer.shadowRadius = lineWidth * 1.5
+            ringGlowLayer.shadowOpacity = 1.0
+            ringGlowLayer.shadowOffset = .zero
+
+        case .pulse:
+            let lineWidth: CGFloat = 2.5
+            pulseStrokeLayer.path = path
+            pulseStrokeLayer.lineWidth = lineWidth
+            pulseStrokeLayer.strokeColor = colors.strokeColor.cgColor
+
+            pulseGlowLayer.path = path
+            pulseGlowLayer.lineWidth = lineWidth
+            pulseGlowLayer.strokeColor = colors.strokeGlow.cgColor
+            pulseGlowLayer.shadowColor = colors.strokeGlow.cgColor
+            pulseGlowLayer.shadowOpacity = 1.0
+            pulseGlowLayer.shadowOffset = .zero
+
+        default:
+            break
+        }
+    }
+
+    private func updateColors() {
+        let colors = resolveColors()
+
+        switch configuration.style {
+        case .bubble:
+            bubbleView.layer.shadowColor = colors.bubbleShadow.cgColor
+            bubbleView.backgroundColor = colors.bubbleFill
+
+        case .ring(let lineWidth):
+            ringTrackLayer.strokeColor = colors.progressTrack.cgColor
+            ringArcLayer.strokeColor = colors.strokeColor.cgColor
+            ringGlowLayer.strokeColor = colors.strokeGlow.cgColor
+            ringGlowLayer.shadowColor = colors.strokeGlow.cgColor
+
+        case .pulse:
+            pulseStrokeLayer.strokeColor = colors.strokeColor.cgColor
+            pulseGlowLayer.strokeColor = colors.strokeGlow.cgColor
+            pulseGlowLayer.shadowColor = colors.strokeGlow.cgColor
+        }
+    }
+
     // MARK: - Animation Control
 
-    /// Starts the bubble animation.
+    /// Starts the loader animation.
     public func startAnimating() {
         guard !isAnimating else { return }
 
         isAnimating = true
-        bubbleView.isHidden = false
         isHidden = false
-
         rebuildPath()
+        updateLayerPaths()
+
+        switch configuration.style {
+        case .bubble:
+            bubbleView.isHidden = false
+        case .ring:
+            ringTrackLayer.isHidden = false
+            ringArcLayer.isHidden = false
+            ringGlowLayer.isHidden = false
+        case .pulse:
+            pulseStrokeLayer.isHidden = false
+            pulseGlowLayer.isHidden = false
+        }
 
         startTime = CACurrentMediaTime()
         let link = CADisplayLink(target: self, selector: #selector(tick))
@@ -158,15 +293,26 @@ public final class LuminaLoaderUIView: UIView {
         displayLink = link
     }
 
-    /// Stops the bubble animation and hides the view.
+    /// Stops the loader animation and hides the view.
     public func stopAnimating() {
         guard isAnimating else { return }
 
         isAnimating = false
         displayLink?.invalidate()
         displayLink = nil
-        bubbleView.isHidden = true
         isHidden = true
+
+        switch configuration.style {
+        case .bubble:
+            bubbleView.isHidden = true
+        case .ring:
+            ringTrackLayer.isHidden = true
+            ringArcLayer.isHidden = true
+            ringGlowLayer.isHidden = true
+        case .pulse:
+            pulseStrokeLayer.isHidden = true
+            pulseGlowLayer.isHidden = true
+        }
     }
 
     // MARK: - Display Link Tick
@@ -175,25 +321,64 @@ public final class LuminaLoaderUIView: UIView {
         guard let path = currentPath else { return }
 
         let elapsed = CACurrentMediaTime() - startTime
+
+        switch configuration.style {
+        case .bubble:
+            tickBubble(elapsed: elapsed, path: path)
+        case .ring:
+            tickRing(elapsed: elapsed)
+        case .pulse:
+            tickPulse(elapsed: elapsed)
+        }
+    }
+
+    private func tickBubble(elapsed: CFTimeInterval, path: CGPath) {
         let fraction = elapsed * Double(configuration.speed)
         let t = fraction - floor(fraction)
-
         let point = PathPointCalculator.pointAtFraction(t, on: path)
-
         let size = configuration.bubbleSize
         bubbleView.center = point
-
-        // Ensure bubble size is correct
         if bubbleView.bounds.width != size {
             bubbleView.bounds = CGRect(x: 0, y: 0, width: size, height: size)
             bubbleView.layer.cornerRadius = size / 2
         }
     }
 
+    private func tickRing(elapsed: CFTimeInterval) {
+        let fraction = elapsed * Double(configuration.speed)
+        let t = fraction - floor(fraction)
+        let arcLength: CGFloat = 0.15
+
+        let start = t
+        let end = t + arcLength
+
+        if end <= 1.0 {
+            ringArcLayer.strokeStart = start
+            ringArcLayer.strokeEnd = end
+            ringGlowLayer.strokeStart = start
+            ringGlowLayer.strokeEnd = end
+        } else {
+            // For simplicity, clamp — the visual wrap is brief
+            ringArcLayer.strokeStart = start
+            ringArcLayer.strokeEnd = 1.0
+            ringGlowLayer.strokeStart = start
+            ringGlowLayer.strokeEnd = 1.0
+        }
+    }
+
+    private func tickPulse(elapsed: CFTimeInterval) {
+        let phase = sin(elapsed * Double(configuration.speed) * .pi * 2)
+        let opacity = Float(0.15 + (1 + phase) * 0.425)
+        let glowRadius = 1 + (1 + phase) * 3.5
+
+        pulseStrokeLayer.opacity = opacity
+        pulseGlowLayer.opacity = opacity
+        pulseGlowLayer.shadowRadius = glowRadius
+    }
+
     // MARK: - Cleanup
 
     deinit {
         // displayLink is invalidated in stopAnimating().
-        // No additional cleanup needed here.
     }
 }

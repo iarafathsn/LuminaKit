@@ -2,10 +2,13 @@ import SwiftUI
 
 /// The animated bubble view that renders differently based on iOS version:
 /// - iOS 26+: Uses Apple's Liquid Glass material
-/// - iOS 18–25: Uses ultraThinMaterial + white glow + shadow
+/// - iOS 18–25: Uses ultraThinMaterial + glow + shadow
+///
+/// Colors adapt to light/dark mode via `LuminaResolvedColors`.
 struct LuminaBubbleView: View {
 
     let size: CGFloat
+    let colors: LuminaResolvedColors
 
     var body: some View {
         if #available(iOS 26, *) {
@@ -20,10 +23,10 @@ struct LuminaBubbleView: View {
     @available(iOS 26, *)
     private var liquidGlassBubble: some View {
         Circle()
-            .fill(.white.opacity(0.5))
+            .fill(colors.bubbleFill)
             .frame(width: size, height: size)
             .glassEffect(.regular.interactive())
-            .shadow(color: .white.opacity(0.6), radius: size * 0.4)
+            .shadow(color: colors.bubbleShadow, radius: size * 0.4)
     }
 
     // MARK: - iOS 18–25 Fallback
@@ -33,13 +36,13 @@ struct LuminaBubbleView: View {
             .fill(.ultraThinMaterial)
             .overlay(
                 Circle()
-                    .fill(.white.opacity(0.8))
+                    .fill(colors.bubbleFill)
             )
             .overlay(
                 Circle()
-                    .stroke(.white.opacity(0.6), lineWidth: 0.5)
+                    .stroke(colors.strokeColor.opacity(0.6), lineWidth: 0.5)
             )
             .frame(width: size, height: size)
-            .shadow(color: .white.opacity(0.8), radius: size * 0.4)
+            .shadow(color: colors.bubbleShadow, radius: size * 0.4)
     }
 }
