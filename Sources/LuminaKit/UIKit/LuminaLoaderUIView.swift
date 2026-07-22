@@ -44,6 +44,8 @@ public final class LuminaLoaderUIView: UIView {
     private let ringTrackLayer = CAShapeLayer()
     private let ringArcLayer = CAShapeLayer()
     private let ringGlowLayer = CAShapeLayer()
+    private let ringWrapArcLayer = CAShapeLayer()
+    private let ringWrapGlowLayer = CAShapeLayer()
 
     // Pulse style
     private let pulseStrokeLayer = CAShapeLayer()
@@ -147,6 +149,20 @@ public final class LuminaLoaderUIView: UIView {
         ringArcLayer.lineCap = .round
         ringArcLayer.lineJoin = .round
         layer.addSublayer(ringArcLayer)
+
+        // Wrap Glow (for seamless 100% -> 0% boundary rotation)
+        ringWrapGlowLayer.fillColor = nil
+        ringWrapGlowLayer.lineCap = .round
+        ringWrapGlowLayer.lineJoin = .round
+        ringWrapGlowLayer.isHidden = true
+        layer.addSublayer(ringWrapGlowLayer)
+
+        // Wrap Arc
+        ringWrapArcLayer.fillColor = nil
+        ringWrapArcLayer.lineCap = .round
+        ringWrapArcLayer.lineJoin = .round
+        ringWrapArcLayer.isHidden = true
+        layer.addSublayer(ringWrapArcLayer)
     }
 
     private func setupPulse() {
@@ -225,6 +241,18 @@ public final class LuminaLoaderUIView: UIView {
             ringGlowLayer.shadowOpacity = 1.0
             ringGlowLayer.shadowOffset = .zero
 
+            ringWrapArcLayer.path = path
+            ringWrapArcLayer.lineWidth = lineWidth
+            ringWrapArcLayer.strokeColor = colors.strokeColor.cgColor
+
+            ringWrapGlowLayer.path = path
+            ringWrapGlowLayer.lineWidth = lineWidth
+            ringWrapGlowLayer.strokeColor = colors.strokeGlow.cgColor
+            ringWrapGlowLayer.shadowColor = colors.strokeGlow.cgColor
+            ringWrapGlowLayer.shadowRadius = lineWidth * 1.5
+            ringWrapGlowLayer.shadowOpacity = 1.0
+            ringWrapGlowLayer.shadowOffset = .zero
+
         case .pulse:
             let lineWidth: CGFloat = 2.5
             pulseStrokeLayer.path = path
@@ -251,11 +279,14 @@ public final class LuminaLoaderUIView: UIView {
             bubbleView.layer.shadowColor = colors.bubbleShadow.cgColor
             bubbleView.backgroundColor = colors.bubbleFill
 
-        case .ring(let lineWidth):
+        case .ring:
             ringTrackLayer.strokeColor = colors.progressTrack.cgColor
             ringArcLayer.strokeColor = colors.strokeColor.cgColor
             ringGlowLayer.strokeColor = colors.strokeGlow.cgColor
             ringGlowLayer.shadowColor = colors.strokeGlow.cgColor
+            ringWrapArcLayer.strokeColor = colors.strokeColor.cgColor
+            ringWrapGlowLayer.strokeColor = colors.strokeGlow.cgColor
+            ringWrapGlowLayer.shadowColor = colors.strokeGlow.cgColor
 
         case .pulse:
             pulseStrokeLayer.strokeColor = colors.strokeColor.cgColor
@@ -282,6 +313,8 @@ public final class LuminaLoaderUIView: UIView {
             ringTrackLayer.isHidden = false
             ringArcLayer.isHidden = false
             ringGlowLayer.isHidden = false
+            ringWrapArcLayer.isHidden = true
+            ringWrapGlowLayer.isHidden = true
         case .pulse:
             pulseStrokeLayer.isHidden = false
             pulseGlowLayer.isHidden = false
@@ -309,6 +342,8 @@ public final class LuminaLoaderUIView: UIView {
             ringTrackLayer.isHidden = true
             ringArcLayer.isHidden = true
             ringGlowLayer.isHidden = true
+            ringWrapArcLayer.isHidden = true
+            ringWrapGlowLayer.isHidden = true
         case .pulse:
             pulseStrokeLayer.isHidden = true
             pulseGlowLayer.isHidden = true
@@ -322,6 +357,10 @@ public final class LuminaLoaderUIView: UIView {
 
         let elapsed = CACurrentMediaTime() - startTime
 
+        // Disable implicit CoreAnimation actions to prevent 0.25s frame lag in CADisplayLink
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
         switch configuration.style {
         case .bubble:
             tickBubble(elapsed: elapsed, path: path)
@@ -330,6 +369,8 @@ public final class LuminaLoaderUIView: UIView {
         case .pulse:
             tickPulse(elapsed: elapsed)
         }
+
+        CATransaction.commit()
     }
 
     private func tickBubble(elapsed: CFTimeInterval, path: CGPath) {
@@ -357,12 +398,26 @@ public final class LuminaLoaderUIView: UIView {
             ringArcLayer.strokeEnd = end
             ringGlowLayer.strokeStart = start
             ringGlowLayer.strokeEnd = end
+
+            // Hide wrap layers when not at the boundary to prevent stray round-cap dots
+            ringWrapArcLayer.isHidden = true
+            ringWrapGlowLayer.isHidden = true
         } else {
-            // For simplicity, clamp — the visual wrap is brief
+            // Main segment: from start to 1.0
             ringArcLayer.strokeStart = start
             ringArcLayer.strokeEnd = 1.0
             ringGlowLayer.strokeStart = start
             ringGlowLayer.strokeEnd = 1.0
+
+            // Wrapped segment: from 0.0 to (end - 1.0)
+            let wrapEnd = end - 1.0
+            ringWrapArcLayer.strokeStart = 0.0
+            ringWrapArcLayer.strokeEnd = wrapEnd
+            ringWrapGlowLayer.strokeStart = 0.0
+            ringWrapGlowLayer.strokeEnd = wrapEnd
+
+            ringWrapArcLayer.isHidden = false
+            ringWrapGlowLayer.isHidden = false
         }
     }
 
