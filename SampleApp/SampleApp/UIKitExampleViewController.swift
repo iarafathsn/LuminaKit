@@ -36,6 +36,8 @@ final class UIKitExampleViewController: UIViewController {
     private let ringButton = UIButton(type: .system)
     private let pulseView = UIView()
     private let progressButton = UIButton(type: .system)
+    private let resetButton = UIButton(type: .system)
+    private let progressLabel = UILabel()
 
     // State
     private var isBubbleLoading = false
@@ -117,7 +119,7 @@ final class UIKitExampleViewController: UIViewController {
             makeExampleSection(
                 title: "Progress",
                 subtitle: "showLuminaProgress / updateLuminaProgress",
-                contentView: makeProgressButton()
+                contentView: makeProgressViewSection()
             )
         )
     }
@@ -191,15 +193,16 @@ final class UIKitExampleViewController: UIViewController {
         return container
     }
 
-    private func makeProgressButton() -> UIView {
+    private func makeProgressViewSection() -> UIView {
         let container = UIStackView()
         container.axis = .vertical
-        container.spacing = 12
+        container.spacing = 16
 
-        // Progress target
+        // Progress target view
         let progressTarget = UIView()
-        progressTarget.backgroundColor = .secondarySystemGroupedBackground
+        progressTarget.backgroundColor = .tertiarySystemGroupedBackground
         progressTarget.layer.cornerRadius = 12
+        progressTarget.tag = 888
 
         let hStack = UIStackView()
         hStack.axis = .horizontal
@@ -212,12 +215,23 @@ final class UIKitExampleViewController: UIViewController {
         icon.contentMode = .scaleAspectFit
         icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
 
-        let label = UILabel()
-        label.text = "Downloading File"
-        label.font = .preferredFont(forTextStyle: .subheadline)
+        let textStack = UIStackView()
+        textStack.axis = .vertical
+        textStack.spacing = 2
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Downloading File"
+        titleLabel.font = .preferredFont(forTextStyle: .subheadline)
+
+        progressLabel.text = "0% complete"
+        progressLabel.font = .preferredFont(forTextStyle: .caption1)
+        progressLabel.textColor = .secondaryLabel
+
+        textStack.addArrangedSubview(titleLabel)
+        textStack.addArrangedSubview(progressLabel)
 
         hStack.addArrangedSubview(icon)
-        hStack.addArrangedSubview(label)
+        hStack.addArrangedSubview(textStack)
         progressTarget.addSubview(hStack)
 
         NSLayoutConstraint.activate([
@@ -229,17 +243,27 @@ final class UIKitExampleViewController: UIViewController {
 
         container.addArrangedSubview(progressTarget)
 
-        // Simulate button
-        var config = UIButton.Configuration.filled()
-        config.title = "Simulate Download"
-        config.baseBackgroundColor = .systemGreen
-        progressButton.configuration = config
-        progressButton.addTarget(self, action: #selector(simulateProgress), for: .touchUpInside)
-        progressButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        container.addArrangedSubview(progressButton)
+        // Control buttons (Reset & Simulate)
+        let buttonStack = UIStackView()
+        buttonStack.axis = .horizontal
+        buttonStack.spacing = 12
+        buttonStack.distribution = .fillEqually
 
-        // Tag the progressTarget for reference
-        progressTarget.tag = 888
+        var resetConfig = UIButton.Configuration.bordered()
+        resetConfig.title = "Reset"
+        resetButton.configuration = resetConfig
+        resetButton.addTarget(self, action: #selector(resetProgress), for: .touchUpInside)
+
+        var simConfig = UIButton.Configuration.filled()
+        simConfig.title = "Simulate"
+        simConfig.baseBackgroundColor = .systemGreen
+        progressButton.configuration = simConfig
+        progressButton.addTarget(self, action: #selector(simulateProgress), for: .touchUpInside)
+
+        buttonStack.addArrangedSubview(resetButton)
+        buttonStack.addArrangedSubview(progressButton)
+
+        container.addArrangedSubview(buttonStack)
 
         return container
     }
@@ -311,11 +335,23 @@ final class UIKitExampleViewController: UIViewController {
         }
     }
 
+    @objc private func resetProgress() {
+        progressTimer?.invalidate()
+        progressTimer = nil
+        currentProgress = 0
+        progressButton.isEnabled = true
+
+        guard let progressTarget = view.viewWithTag(888) else { return }
+        progressTarget.updateLuminaProgress(value: 0)
+        progressTarget.hideLuminaProgress()
+        progressLabel.text = "0% complete"
+    }
+
     @objc private func simulateProgress() {
         progressTimer?.invalidate()
         currentProgress = 0
+        progressButton.isEnabled = false
 
-        // Find the progress target view
         guard let progressTarget = view.viewWithTag(888) else { return }
         progressTarget.showLuminaProgress(value: 0)
 
@@ -324,9 +360,11 @@ final class UIKitExampleViewController: UIViewController {
                 guard let self else { return }
                 self.currentProgress = min(self.currentProgress + 0.01, 1.0)
                 progressTarget.updateLuminaProgress(value: self.currentProgress)
+                self.progressLabel.text = "\(Int(self.currentProgress * 100))% complete"
                 if self.currentProgress >= 1.0 {
                     self.progressTimer?.invalidate()
                     self.progressTimer = nil
+                    self.progressButton.isEnabled = true
                 }
             }
         }

@@ -52,10 +52,10 @@ public enum LuminaColorMode: Sendable {
     /// (`colorScheme` in SwiftUI, `traitCollection` in UIKit).
     case auto
 
-    /// Forces light-mode colors (white glow). Use on light backgrounds.
+    /// Forces light-mode colors (dark charcoal fill/stroke for contrast). Use on light backgrounds.
     case light
 
-    /// Forces dark-mode colors (soft blue-white glow). Use on dark backgrounds.
+    /// Forces dark-mode colors (soft white stroke with blue glow). Use on dark backgrounds.
     case dark
 
     /// Uses custom colors for both light and dark modes.
@@ -113,11 +113,11 @@ struct LuminaResolvedColors {
     )
 
     private static let lightDefaults = LuminaResolvedColors(
-        bubbleFill: Color.white.opacity(0.8),
-        bubbleShadow: Color.white.opacity(0.5),
-        strokeColor: Color.white,
-        strokeGlow: Color.white.opacity(0.6),
-        progressTrack: Color.white.opacity(0.15)
+        bubbleFill: Color(white: 0.15).opacity(0.85),
+        bubbleShadow: Color.black.opacity(0.35),
+        strokeColor: Color(white: 0.15),
+        strokeGlow: Color(.systemBlue).opacity(0.35),
+        progressTrack: Color.black.opacity(0.12)
     )
 }
 
@@ -168,10 +168,10 @@ struct LuminaResolvedUIColors {
     )
 
     private static let lightDefaults = LuminaResolvedUIColors(
-        bubbleFill: UIColor.white.withAlphaComponent(0.8),
-        bubbleShadow: UIColor.white.withAlphaComponent(0.8),
-        strokeColor: UIColor.white,
-        strokeGlow: UIColor.white.withAlphaComponent(0.6),
-        progressTrack: UIColor.white.withAlphaComponent(0.15)
+        bubbleFill: UIColor(white: 0.15, alpha: 0.85),
+        bubbleShadow: UIColor.black.withAlphaComponent(0.35),
+        strokeColor: UIColor(white: 0.15, alpha: 1.0),
+        strokeGlow: UIColor.systemBlue.withAlphaComponent(0.35),
+        progressTrack: UIColor.black.withAlphaComponent(0.12)
     )
 }
