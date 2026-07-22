@@ -19,10 +19,12 @@ struct LuminaProgressModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay {
-                GeometryReader { geometry in
-                    progressOverlay(in: geometry.size)
+                if value > 0 {
+                    GeometryReader { geometry in
+                        progressOverlay(in: geometry.size)
+                    }
+                    .allowsHitTesting(false)
                 }
-                .allowsHitTesting(false)
             }
     }
 
