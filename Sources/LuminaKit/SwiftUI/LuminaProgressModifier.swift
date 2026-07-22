@@ -5,13 +5,12 @@ import SwiftUI
 ///
 /// The border fills from 0% to 100% based on the `value` binding.
 /// A glowing leading edge provides visual polish.
-struct LuminaProgressModifier<S: Shape>: ViewModifier {
+struct LuminaProgressModifier: ViewModifier {
 
     @Binding var value: CGFloat
-    let shape: S?
+    let shape: any Shape
     let colorMode: LuminaColorMode
 
-    @State private var detectedCornerRadius: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
 
     /// Stroke width for the progress border.
@@ -19,10 +18,6 @@ struct LuminaProgressModifier<S: Shape>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(
-                CornerRadiusReader(cornerRadius: $detectedCornerRadius)
-                    .allowsHitTesting(false)
-            )
             .overlay {
                 GeometryReader { geometry in
                     progressOverlay(in: geometry.size)
@@ -80,11 +75,6 @@ struct LuminaProgressModifier<S: Shape>: ViewModifier {
     }
 
     private func resolvePath(in rect: CGRect) -> CGPath {
-        if let shape = shape {
-            return shape.path(in: rect).cgPath
-        }
-        return RoundedRectangle(cornerRadius: detectedCornerRadius)
-            .path(in: rect)
-            .cgPath
+        shape.path(in: rect).cgPath
     }
 }

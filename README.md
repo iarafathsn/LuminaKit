@@ -68,23 +68,37 @@ struct ContentView: View {
     @State private var isLoading = false
 
     var body: some View {
-        // Auto-detects view size and corner radius
+        // Standard rectangle (default)
         Button("Submit") {
             isLoading.toggle()
         }
         .luminaLoader(isAnimating: $isLoading)
 
-        // With explicit shape (for Circle, Capsule, etc.)
+        // Rounded rectangle shape
+        Button("Rounded") {
+            isLoading.toggle()
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .luminaLoader(
+            isAnimating: $isLoading,
+            shape: RoundedRectangle(cornerRadius: 12)
+        )
+
+        // Circle or Capsule shape
         Image(systemName: "person.fill")
             .clipShape(Circle())
-            .luminaLoader(isAnimating: $isLoading, shape: Circle())
+            .luminaLoader(
+                isAnimating: $isLoading,
+                shape: Circle()
+            )
 
         // Full customization
-        Button("Submit") {
+        Button("Customized") {
             isLoading.toggle()
         }
         .luminaLoader(
             isAnimating: $isLoading,
+            shape: Capsule(),
             bubbleSize: 12,
             speed: 0.8
         )
@@ -123,7 +137,7 @@ loader.stopAnimating()
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `isAnimating` | `Binding<Bool>` | — | Controls the animation state (SwiftUI) |
-| `shape` | `Shape` | Auto-detected | The border path to follow (SwiftUI) |
+| `shape` | `any Shape` | `Rectangle()` | The border shape to follow (SwiftUI) |
 | `path` | `CGPath?` | Auto-detected | The border path to follow (UIKit) |
 | `bubbleSize` | `CGFloat` | `10` | Diameter of the bubble in points |
 | `speed` | `CGFloat` | `0.5` | Revolutions per second |

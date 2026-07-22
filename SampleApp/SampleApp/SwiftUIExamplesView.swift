@@ -54,8 +54,12 @@ struct SwiftUIExamplesView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .luminaLoader(isAnimating: $isBubbleLoading, style: .bubble)
+            .buttonBorderShape(.roundedRectangle(radius: 12))
+            .luminaLoader(
+                isAnimating: $isBubbleLoading,
+                shape: RoundedRectangle(cornerRadius: 12),
+                style: .bubble
+            )
         }
     }
 
@@ -76,8 +80,12 @@ struct SwiftUIExamplesView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.purple)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .luminaLoader(isAnimating: $isRingLoading, style: .ring(lineWidth: 3))
+            .buttonBorderShape(.roundedRectangle(radius: 12))
+            .luminaLoader(
+                isAnimating: $isRingLoading,
+                shape: RoundedRectangle(cornerRadius: 12),
+                style: .ring(lineWidth: 3)
+            )
         }
     }
 
@@ -136,7 +144,11 @@ struct SwiftUIExamplesView: View {
                 .padding(14)
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .luminaProgress(value: $progress)
+                .luminaProgress(
+                    value: $progress,
+                    shape: RoundedRectangle(cornerRadius: 12),
+                    colorMode: .custom(LuminaColors(primary: .gray)) 
+                )
 
                 // Controls
                 HStack(spacing: 12) {

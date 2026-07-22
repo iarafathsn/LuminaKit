@@ -5,21 +5,16 @@ import SwiftUI
 ///
 /// Supports multiple styles: `.bubble`, `.ring`, and `.pulse`.
 /// When `isAnimating` is `true`, the loader appears. When `false`, it hides.
-struct LuminaLoaderModifier<S: Shape>: ViewModifier {
+struct LuminaLoaderModifier: ViewModifier {
 
     @Binding var isAnimating: Bool
-    let shape: S?
+    let shape: any Shape
     let configuration: LuminaConfiguration
 
-    @State private var detectedCornerRadius: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
-            .background(
-                CornerRadiusReader(cornerRadius: $detectedCornerRadius)
-                    .allowsHitTesting(false)
-            )
             .overlay {
                 if isAnimating {
                     GeometryReader { geometry in
@@ -74,17 +69,8 @@ struct LuminaLoaderModifier<S: Shape>: ViewModifier {
         }
     }
 
-    /// Resolves the animation path from either the user-provided shape
-    /// or an auto-detected rounded rectangle.
+    /// Resolves the animation path from the provided shape.
     private func resolvePath(in rect: CGRect) -> CGPath {
-        if let shape = shape {
-            return shape.path(in: rect).cgPath
-        }
-
-        // Auto-detect: use RoundedRectangle with detected corner radius
-        let cornerRadius = detectedCornerRadius
-        return RoundedRectangle(cornerRadius: cornerRadius)
-            .path(in: rect)
-            .cgPath
+        shape.path(in: rect).cgPath
     }
 }
