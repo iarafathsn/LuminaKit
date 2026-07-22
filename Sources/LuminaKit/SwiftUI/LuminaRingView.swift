@@ -24,7 +24,7 @@ struct LuminaRingView: View {
                 let trimEnd = trimStart + trimLength
 
                 // Draw track (subtle background stroke)
-                var trackPath = swiftPath
+                let trackPath = swiftPath
                     .strokedPath(StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
                 context.fill(trackPath, with: .color(colors.progressTrack))
 

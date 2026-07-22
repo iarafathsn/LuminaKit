@@ -1,40 +1,56 @@
 # LuminaKit
 
-A lightweight iOS library that provides a beautiful, animated bubble loading indicator. The bubble traces the border of any view shape — rectangles, circles, capsules, or custom paths.
+A lightweight, high-performance iOS library that provides animated border-tracing loading indicators and progress bars for any view shape — rectangles, rounded rectangles, circles, capsules, or custom paths.
 
-On **iOS 26+**, the bubble automatically uses Apple's **Liquid Glass** material for a premium, system-native look. On **iOS 18–25**, it falls back to a polished glass-morphic style.
+On **iOS 26+**, LuminaKit automatically leverages Apple's **Liquid Glass** material for a premium, system-native look. On **iOS 18–25**, it falls back to a polished glassmorphic glow effect.
 
-| SwiftUI | UIKit |
+| SwiftUI Demo | UIKit Demo |
 | --- | --- |
 | <img width="295" height="640" alt="SwiftUI_Demo" src="https://github.com/user-attachments/assets/d25aafd1-4862-4168-9142-81ec977c279c" /> | <img width="295" height="640" alt="UIKit_Demo" src="https://github.com/user-attachments/assets/700387c2-019b-4f96-b36a-7234433aa3d4" /> |
 
-<!-- Video file https://github.com/user-attachments/assets/0e88076c-b597-40d0-a74f-3b4a88e21431 -->
+---
+
+## What's New in 2.0.0 🎉
+
+- **Multiple Animation Styles**: Choose between `.bubble` (classic moving bubble), `.ring(lineWidth:)` (continuous 360° rotating arc), and `.pulse` (breathing glow border).
+- **Determinate Progress Indicators**: Border progress animation for SwiftUI (`.luminaProgress`) and UIKit (`showLuminaProgress`), complete with automatic zero-value hiding.
+- **Advanced Color Customization (`LuminaColorMode` & `LuminaColors`)**:
+  - `auto`: Automatically adapts to system Appearance (Light/Dark mode) with charcoal light mode defaults for maximum contrast.
+  - `light` / `dark`: Explicit theme locking.
+  - `custom(LuminaColors)`: Full control over primary color, stroke glow, shadow, and track colors.
+  - `adaptive(light:dark:)`: Set distinct custom color palettes for light and dark modes.
+- **Enhanced UIKit Performance**: Zero-jitter animation loop using `CADisplayLink` + seamless stroke wrap-around on circular and rectangular paths.
+
+---
 
 ## Requirements
 
-- iOS 18.0+
-- Swift 6.0+
+- **iOS 18.0+**
+- **Swift 6.0+**
+- **Xcode 16.0+**
+
+---
 
 ## Installation
 
 ### Swift Package Manager
 
-Add the following to your `Package.swift`:
+Add LuminaKit to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/iarafathsn/LuminaKit.git", from: "1.0.0")
+    .package(url: "https://github.com/iarafathsn/LuminaKit.git", from: "2.0.0")
 ]
 ```
 
-Or in Xcode: **File → Add Package Dependencies** → enter `https://github.com/iarafathsn/LuminaKit.git`
+Or in Xcode: **File → Add Package Dependencies** → search `https://github.com/iarafathsn/LuminaKit.git`
 
 ### CocoaPods
 
 Add the following to your `Podfile`:
 
 ```ruby
-pod 'LuminaLoaderKit', '~> 1.0'
+pod 'LuminaLoaderKit', '~> 2.0'
 ```
 
 Then run:
@@ -47,8 +63,8 @@ pod install
 
 Add the following to your `Cartfile`:
 
-```
-github "iarafathsn/LuminaKit" ~> 1.0
+```ogdl
+github "iarafathsn/LuminaKit" ~> 2.0
 ```
 
 Then run:
@@ -57,93 +73,163 @@ Then run:
 carthage update --use-xcframeworks
 ```
 
-Drag the built `LuminaKit.xcframework` from `Carthage/Build/` into your project.
+---
 
 ## Usage
 
-### SwiftUI
+### 1. SwiftUI
+
+#### Indeterminate Loader (Bubble, Ring, Pulse)
 
 ```swift
+import SwiftUI
 import LuminaKit
 
 struct ContentView: View {
     @State private var isLoading = false
 
     var body: some View {
-        // Standard rectangle (default)
-        Button("Submit") {
-            isLoading.toggle()
-        }
-        .luminaLoader(isAnimating: $isLoading)
+        VStack(spacing: 20) {
+            // 1. Standard Bubble Loader (Default)
+            Button("Bubble Loader") { isLoading.toggle() }
+                .padding()
+                .luminaLoader(isAnimating: $isLoading)
 
-        // Rounded rectangle shape
-        Button("Rounded") {
-            isLoading.toggle()
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .luminaLoader(
-            isAnimating: $isLoading,
-            shape: RoundedRectangle(cornerRadius: 12)
-        )
+            // 2. Rotating Ring Loader
+            Button("Ring Loader") { isLoading.toggle() }
+                .padding()
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .luminaLoader(
+                    isAnimating: $isLoading,
+                    shape: RoundedRectangle(cornerRadius: 12),
+                    style: .ring(lineWidth: 3)
+                )
 
-        // Circle or Capsule shape
-        Image(systemName: "person.fill")
-            .clipShape(Circle())
-            .luminaLoader(
-                isAnimating: $isLoading,
-                shape: Circle()
-            )
-
-        // Full customization
-        Button("Customized") {
-            isLoading.toggle()
+            // 3. Breathing Pulse Loader
+            Button("Pulse Loader") { isLoading.toggle() }
+                .padding()
+                .clipShape(Capsule())
+                .luminaLoader(
+                    isAnimating: $isLoading,
+                    shape: Capsule(),
+                    style: .pulse
+                )
         }
-        .luminaLoader(
-            isAnimating: $isLoading,
-            shape: Capsule(),
-            bubbleSize: 12,
-            speed: 0.8
-        )
     }
 }
 ```
 
-### UIKit
+#### Determinate Progress Bar
 
 ```swift
-import LuminaKit
+struct ProgressViewExample: View {
+    @State private var progress: CGFloat = 0.45
 
-// One-liner convenience
-button.showLuminaLoader()
-button.hideLuminaLoader()
-
-// With custom path (for non-rectangular shapes)
-let ovalPath = UIBezierPath(ovalIn: imageView.bounds).cgPath
-imageView.showLuminaLoader(path: ovalPath)
-
-// With customization
-button.showLuminaLoader(bubbleSize: 12, speed: 0.8)
-
-// Object-based control
-let loader = LuminaLoaderUIView(
-    configuration: LuminaConfiguration(bubbleSize: 12, speed: 0.8)
-)
-myView.addSubview(loader)
-loader.frame = myView.bounds
-loader.startAnimating()
-loader.stopAnimating()
+    var body: some View {
+        Button("Upload File") { }
+            .padding()
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .luminaProgress(
+                value: $progress,
+                shape: RoundedRectangle(cornerRadius: 10)
+            )
+    }
+}
 ```
 
-## Parameters
+#### Custom & Adaptive Colors
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `isAnimating` | `Binding<Bool>` | — | Controls the animation state (SwiftUI) |
-| `shape` | `any Shape` | `Rectangle()` | The border shape to follow (SwiftUI) |
-| `path` | `CGPath?` | Auto-detected | The border path to follow (UIKit) |
-| `bubbleSize` | `CGFloat` | `10` | Diameter of the bubble in points |
-| `speed` | `CGFloat` | `0.5` | Revolutions per second |
+```swift
+// Single custom color scheme
+let customTheme = LuminaColors(
+    primary: .indigo,
+    glow: .indigo.opacity(0.5)
+)
+
+Button("Custom Theme") { }
+    .luminaLoader(
+        isAnimating: $isLoading,
+        colorMode: .custom(customTheme)
+    )
+
+// Adaptive Light & Dark mode colors
+let adaptiveMode = LuminaColorMode.adaptive(
+    light: LuminaColors(primary: .blue),
+    dark: LuminaColors(primary: .cyan)
+)
+
+Button("Adaptive Theme") { }
+    .luminaLoader(
+        isAnimating: $isLoading,
+        colorMode: adaptiveMode
+    )
+```
+
+---
+
+### 2. UIKit
+
+#### Indeterminate Loader
+
+```swift
+import UIKit
+import LuminaKit
+
+// Show loader on any UIView or UIButton
+button.showLuminaLoader(style: .bubble)
+
+// Ring style with custom speed
+button.showLuminaLoader(style: .ring(lineWidth: 4), speed: 0.8)
+
+// Hide loader
+button.hideLuminaLoader()
+
+// Object-based instantiation
+let loaderView = LuminaLoaderUIView(
+    configuration: LuminaConfiguration(style: .ring(lineWidth: 3))
+)
+myView.addSubview(loaderView)
+loaderView.frame = myView.bounds
+loaderView.startAnimating()
+```
+
+#### Determinate Progress Bar
+
+```swift
+// Show progress indicator (0.0 to 1.0)
+cardView.showLuminaProgress(value: 0.25)
+
+// Update progress during task
+cardView.updateLuminaProgress(value: 0.85)
+
+// Hide progress when complete
+cardView.hideLuminaProgress()
+```
+
+---
+
+## Configuration & API Reference
+
+### `LuminaLoaderStyle`
+- `.bubble`: Glowing bubble travelling along the border.
+- `.ring(lineWidth: CGFloat)`: Smooth rotating arc along the border.
+- `.pulse`: Border glow pulsing in and out.
+
+### `LuminaColorMode`
+- `.auto`: Adapts to Light (charcoal/dark contrast) and Dark (glowing cyan/white) appearance.
+- `.light`: Enforces light mode color scheme.
+- `.dark`: Enforces dark mode color scheme.
+- `.custom(LuminaColors)`: Uses custom colors.
+- `.adaptive(light: LuminaColors, dark: LuminaColors)`: Different custom colors for light/dark modes.
+
+### `LuminaColors`
+- `primary`: Main accent color.
+- `glow`: Color for stroke glow effect.
+- `shadow`: Color for bubble shadow.
+- `progressTrack`: Color for underlying progress track path.
+
+---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+LuminaKit is available under the **MIT License**. See [LICENSE](LICENSE) for details.
