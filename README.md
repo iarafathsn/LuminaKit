@@ -4,7 +4,9 @@ A lightweight iOS library that provides a beautiful, animated bubble loading ind
 
 On **iOS 26+**, the bubble automatically uses Apple's **Liquid Glass** material for a premium, system-native look. On **iOS 18–25**, it falls back to a polished glass-morphic style.
 
-<img width="400" height="841" alt="LuminaKitSample" src="https://github.com/user-attachments/assets/3b5ad487-96a5-4b13-ba9c-e90bd8069bc9" />
+| SwiftUI | UIKit |
+| --- | --- |
+| <img width="295" height="640" alt="SwiftUI_Demo" src="https://github.com/user-attachments/assets/d25aafd1-4862-4168-9142-81ec977c279c" /> | <img width="295" height="640" alt="UIKit_Demo" src="https://github.com/user-attachments/assets/700387c2-019b-4f96-b36a-7234433aa3d4" /> |
 
 <!-- Video file https://github.com/user-attachments/assets/0e88076c-b597-40d0-a74f-3b4a88e21431 -->
 
